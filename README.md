@@ -1,16 +1,19 @@
 # Gestor de Tareas
 
-App Flutter de **notas personales al estilo Google Keep**: buscas, fijas y eliminas notas desde una lista, y las creas o editas en un editor que guarda solo mientras escribes y acepta formato (negrita, cursiva, tachado y listas).
+App Flutter de **listas de tareas al estilo Google Keep**: buscas, fijas y eliminas listas, y al abrirlas marcas las tareas hechas, que quedan tachadas. Para modificarlas tocas Editar, y desde Ajustes eliges si eso hace falta y si los cambios se guardan solos.
 
 ## ¿Qué hace?
 
-- **Lista de notas** en dos columnas de alto libre, con una barra de búsqueda arriba. Las notas fijadas salen primero, en la sección "FIJADAS", y el resto en "OTRAS".
-- **Búsqueda** por título o contenido mientras escribes.
-- **Mantener presionada una nota** abre un menú para **fijarla** (máximo 5) o **eliminarla**.
-- **Editor**: el primer renglón es el título, más grande, y el resto es el contenido. Una nota puede tener solo título o solo contenido, pero no puede quedar vacía.
-- **Guardado automático**: la nota se guarda sola 800 ms después de que dejas de escribir, y también al salir.
-- **Formato** con una barra de botones: negrita, cursiva, tachado y listas. Las marcas de formato no se ven, igual que en Keep.
-- **Scroll infinito**: las notas no fijadas se cargan por páginas a medida que bajas.
+- **Listas** en dos columnas de alto libre, con una barra de búsqueda arriba y cada tarea con su estado. Las fijadas salen primero, en la sección "FIJADAS", y el resto en "OTRAS".
+- **Búsqueda** por título o texto de las tareas mientras escribes, sobre las listas ya cargadas.
+- **Mantener presionada una lista** abre un menú para **fijarla** (máximo 5) o **eliminarla**.
+- **Vista previa**: al abrir una lista se ven el título y las tareas, y solo se pueden marcar. Marcar se guarda de una.
+- **Editor**: al tocar **Editar** aparecen los campos, agregar y eliminar tareas y la barra de formato. **Guardar** vuelve a la vista previa. Las listas nuevas abren editando. Una lista puede tener solo título o solo tareas, pero no puede quedar vacía.
+- **Ajustes**: desde el engranaje del home se activa o no el **autoguardado** (activo por defecto) y **tocar Editar para modificar** (activo por defecto; si se apaga, las listas abren editando).
+- **Tareas hechas**: al marcar el check, la tarea se tacha. El tachado solo viene del check, no es un formato de texto.
+- **Guardado automático**: con el autoguardado activo, la lista se guarda sola 800 ms después del último cambio, y también al salir. Sin él, solo se guarda con **Guardar**, y si sales con cambios se pregunta si guardarlos o descartarlos.
+- **Formato** con una barra de botones: negrita y cursiva, por ahora solo en el título. Las marcas de formato no se ven, igual que en Keep.
+- **Estado global**: las listas se cargan al abrir el home y se actualizan solas al crear, editar, fijar o eliminar, sin recargar.
 
 Proyecto construido con **Clean Architecture** (domain / data / presentation), MVVM en la capa de presentación, **Riverpod** para estado global e inyección de dependencias, **go_router** para la navegación y **flavors** (`mock`, `dev` y `prod`).
 
@@ -22,7 +25,7 @@ Proyecto construido con **Clean Architecture** (domain / data / presentation), M
 
 | Opciones al mantener presionado | Editor con formato | Búsqueda sin resultados |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/04_opciones.png" width="220" alt="Menú para fijar o eliminar una nota"> | <img src="docs/screenshots/05_editor.png" width="220" alt="Editor con título, negrita, cursiva, tachado y lista"> | <img src="docs/screenshots/06_sin_resultados.png" width="220" alt="Pantalla sin resultados con el botón Limpiar búsqueda"> |
+| <img src="docs/screenshots/04_opciones.png" width="220" alt="Menú para fijar o eliminar una nota"> | <img src="docs/screenshots/05_editor.png" width="220" alt="Editor de la versión anterior, de texto libre"> | <img src="docs/screenshots/06_sin_resultados.png" width="220" alt="Pantalla sin resultados con el botón Limpiar búsqueda"> |
 
 ## Requisitos previos
 
@@ -68,7 +71,7 @@ No se necesita ningún API key ni archivo `.env`: las notas se guardan en el dis
 
 | Flavor | Nombre de la app | Notas |
 |---|---|---|
-| `mock` | [MOCK] Gestor de Tareas | En memoria, con 68 notas de ejemplo para probar la lista y el scroll infinito. Se pierden al cerrar la app. |
+| `mock` | [MOCK] Gestor de Tareas | En memoria, con 68 notas de ejemplo para probar la lista con muchos elementos. Se pierden al cerrar la app. |
 | `dev` | [DEV] Gestor de Tareas | Guardadas en el dispositivo con `shared_preferences`. |
 | `prod` | Gestor de Tareas | Guardadas en el dispositivo con `shared_preferences`. |
 
@@ -102,7 +105,7 @@ flowchart TB
 
     subgraph Domain["domain — no depende de ninguna otra capa"]
         direction TB
-        UseCase["UseCases<br/>GetNotes, GetPinnedNotes, SaveNote, DeleteNote, PinNote, Load"]
+        UseCase["UseCases<br/>GetNotes, SaveNote, DeleteNote, PinNote, Load"]
         RepoI["NoteRepository / LocalizationRepository<br/>(interfaces abstractas)"]
         Entities["Entities<br/>NoteEntity, AsyncState&lt;T&gt;, SearchResult&lt;T&gt;"]
         UseCase --> RepoI
@@ -129,21 +132,24 @@ lib/
 │   ├── entities/         # NoteEntity, AsyncState<T>, SearchResult<T>
 │   ├── repositories/     # Contratos abstractos (NoteRepository, LocalizationRepository)
 │   ├── use_cases/        # Una operación de negocio por clase (note/, load_use_case.dart)
-│   ├── states/           # Contrato de estado global (LocalizationState)
+│   ├── states/           # Contratos de estado global (LocalizationState, NotesState, SettingsState)
 │   └── constants/        # Claves de error compartidas (ErrorsConstants)
 │
 ├── data/                # Implementaciones concretas de los contratos de domain
+│   ├── dto/              # NoteDto y TaskDto: formato guardado y conversión con las entidades
 │   └── repositories/
 │       ├── note/          # NoteRepositoryImpl (shared_preferences) + api/, y NoteRepositoryMock
 │       └── localization/  # LocalizationRepositoryImpl + api/
 │
 ├── presentation/        # UI + estado de UI
 │   ├── pages/            # Cada pantalla: Page + Screen + ViewModel (+ widgets/ propios)
-│   │   ├── splash/        # Carga traducciones y versión, luego va a la lista
-│   │   ├── notes/         # Lista con búsqueda, fijadas, opciones y scroll infinito
-│   │   └── note_editor/   # Editor con guardado automático y barra de formato
+│   │   ├── splash/        # Carga traducciones, ajustes y versión, luego va a la lista
+│   │   ├── notes/         # Lista con carga inicial, búsqueda, fijadas y opciones
+│   │   ├── note_editor/   # Vista previa y edición, con guardado y barra de formato
+│   │   └── settings/      # Ajustes: autoguardado y tocar Editar
 │   ├── widgets/          # Reutilizables: buttons/ y loaders_status/ (carga, error, sin resultados)
-│   ├── states/           # Implementación Riverpod de LocalizationState
+│   ├── helpers/          # FunctionsHelper: espera a que se termine de escribir
+│   ├── states/           # Implementaciones Riverpod de los estados
 │   ├── utils/            # ViewModel base + StfViewModelAdapter
 │   ├── constants/        # TextConstants (claves de traducción) y MarkdownConstants
 │   ├── router.dart       # Rutas con go_router
@@ -154,7 +160,7 @@ lib/
 └── main.dart                  # Punto de entrada: lee el flavor y envuelve la app en ProviderScope
 
 assets/translate_dictionaries/  # Traducciones (es.json)
-test/                           # Tests del repositorio, casos de uso y controller del editor
+test/                           # Tests del repositorio, estado, casos de uso, pantallas y controller del editor
 ```
 
 ### Capas
@@ -183,17 +189,38 @@ Los repositorios devuelven [AsyncState<T>](lib/domain/entities/petition_status_e
 
 - **Una clave por nota**: cada nota se guarda como JSON en `sp_note_{id}`, así se accede directo a una nota por su id.
 - **Fijadas**: solo se guarda la lista de ids en `sp_pinned_notes`. Al cargar, la API marca qué notas están fijadas.
-- **Lista**: las fijadas se cargan con `GetPinnedNotesUseCase` y las demás con `GetNotesUseCase`, por páginas. El contenido se recorta a 10 renglones con `...`, y el editor carga la nota completa por id antes de editarla.
+- **Tareas**: se guardan dentro de la nota, en `content`, cada una con `id`, `content` y `completed`. Las notas viejas, con el contenido como texto, se leen convirtiendo cada renglón en una tarea, y un renglón todo con `~~` en una tarea completada.
+- **Lectura**: `getNotes` devuelve todas las notas completas, de la más reciente a la más antigua.
+
+### Estado de las notas
+
+`notesStateProvider` ([NotesStateImpl](lib/presentation/states/notes_state_impl.dart), un `Notifier` de Riverpod) tiene todas las notas en memoria. Es la única fuente de la que lee la UI:
+
+- **Carga inicial**: `NotesPageViewModel` llama a `GetNotesUseCase` al abrir el home, que llena el estado. Mientras tanto se ve la ruedita de `LoaderScreenWidget`.
+- **Cambios**: `SaveNoteUseCase`, `DeleteNoteUseCase` y `PinNoteUseCase` guardan en el repositorio y, solo si sale bien, actualizan el estado. Domain conoce únicamente la interfaz [NotesState](lib/domain/states/notes_state.dart), igual que con `LocalizationState`.
+- **Lectura**: `NotesPageScreen` hace `ref.watch` del estado y se redibuja sola. La búsqueda filtra en memoria, las tarjetas muestran hasta 10 tareas con `...`, y el editor recibe la nota completa desde el estado.
+
+### Ajustes
+
+`settingsStateProvider` ([SettingsStateImpl](lib/presentation/states/settings_state_impl.dart)) tiene los ajustes en memoria. `LoadUseCase` los carga en el splash, para que estén listos antes de abrir cualquier lista, y `SaveSettingsUseCase` los guarda en `shared_preferences` y actualiza el estado. Si la carga falla, quedan los valores por defecto.
+
+| Autoguardado | Tocar Editar | Al abrir una lista | Guardar |
+|---|---|---|---|
+| Sí | Sí | Vista previa | Termina de editar; los cambios ya se fueron guardando |
+| No | Sí | Vista previa | Guarda los cambios y vuelve a la vista previa |
+| Sí | No | Editando | No hay botón |
+| No | No | Editando | Guarda y sigue editando |
 
 ### Editor
 
-- **Guardado automático con debounce**: cada tecla reinicia un temporizador de 800 ms y solo se guarda cuando dejas de escribir. Los guardados se encadenan para que una actualización nunca se adelante a la creación.
-- **Formato Markdown**: la barra inserta `**negrita**`, `_cursiva_`, `~~tachado~~` y `- ` para listas. Cada formato usa un carácter distinto para que sus marcas nunca se confundan aunque queden pegadas.
+- **Guardado automático con debounce**: cada cambio reinicia un temporizador de 800 ms y solo se guarda cuando dejas de escribir. Los guardados se encadenan para que una actualización nunca se adelante a la creación.
+- **Filas de tareas**: cada tarea tiene su propio campo. Enter crea otra debajo, y las filas vacías no se guardan.
+- **Tachado**: se aplica como estilo del campo cuando la tarea está completada. No hay marca de tachado en el texto, para no confundirlo con una tarea hecha.
+- **Tareas en edición**: [TaskRowWidget](lib/presentation/pages/note_editor/widgets/task_row_widget.dart) usa un `TextFormField` sin controller y avisa de la edición cuando pasan 500 ms sin escribir, con [FunctionsHelper](lib/presentation/helpers/functions_helper.dart).
+- **Formato Markdown**: la barra inserta `**negrita**` y `_cursiva_` en el título. Cada formato usa un carácter distinto para que sus marcas nunca se confundan aunque queden pegadas.
 - [NoteEditingController](lib/presentation/pages/note_editor/controllers/note_editing_controller.dart) hace que el editor se comporte como Keep:
   - Interpreta las marcas con un parser de pila y las dibuja invisibles y sin ancho.
   - El cursor y el borrado se saltan las marcas.
-  - Al dar Enter dentro de un formato, lo cierra y lo reabre en el renglón siguiente.
-  - Continúa las listas con Enter, y un segundo Enter sobre la viñeta vacía la termina.
   - Respeta el autocompletado del teclado.
 
 ### Internacionalización
@@ -230,27 +257,16 @@ Si una constante no tiene comentario, su texto no recibe variables.
 | Paquete | Para qué se usa | Por qué está |
 |---|---|---|
 | `flutter_riverpod` / `riverpod` | Estado global e inyección de dependencias | Es el mecanismo central de la arquitectura: repositorios, estados y casos de uso se declaran como Providers. |
-| `go_router` | Navegación entre splash, lista y editor | Rutas declarativas (`context.go` / `context.push`). El editor recibe la nota con `extra` y la lista se recarga cuando `push` termina. |
+| `go_router` | Navegación entre splash, lista y editor | Rutas declarativas (`context.go` / `context.push`). El editor recibe la nota con `extra`. |
 | `shared_preferences` | Persistencia local de clave-valor | Guarda las notas (una clave por nota) y los ids de las fijadas en los flavors `dev` y `prod`. También lo usa la localización para el idioma guardado. |
-| `infinite_scroll_pagination` | Scroll infinito de las notas no fijadas | Ver [Por qué `infinite_scroll_pagination`](#por-qué-infinite_scroll_pagination). |
+| `flutter_staggered_grid_view` | Grilla de dos columnas de alto libre | `SliverMasonryGrid` mantiene las columnas estilo Keep en el mismo scroll que las fijadas y solo construye las tarjetas visibles. |
 | `package_info_plus` | Leer la versión y el número de build | Se muestran en el splash (`Versión {version} ({build})`). |
 | `flutter_flavorizr` (dev) | Generar los flavors `mock`, `dev` y `prod` | Configura Android e iOS (ids, nombres, esquemas de Xcode) desde `pubspec.yaml`. Está configurado para no tocar `main.dart`, `app.dart` ni los íconos. |
 | `flutter_test`, `flutter_lints` (dev) | Tests y reglas de análisis estático | |
 
-### Por qué `infinite_scroll_pagination`
+### Por qué no hay paginación
 
-Las notas no fijadas pueden crecer sin límite, así que no se cargan todas de una vez: se piden por páginas de 20 a medida que el usuario baja. Cargarlas todas significaría leer, decodificar y dibujar cada nota aunque nunca se vea.
-
-Paginar a mano es poco código, pero tiene detalles fáciles de olvidar, y el paquete ya los resuelve:
-
-- **No pide la misma página dos veces** mientras una carga está en curso.
-- **Descarta respuestas viejas**: si el usuario busca otra cosa mientras llegaba una página, esa página se ignora.
-- **Estados por página**: carga inicial, error con reintentar, lista vacía, cargando más y fin de la lista, cada uno con su propio widget.
-- **Grilla de alturas libres**: `PagedSliverMasonryGrid` mantiene las dos columnas estilo Keep dentro del mismo scroll que las fijadas.
-
-Es el mismo paquete y el mismo patrón (`PagingController` + `PagingListener`) que se usa en pragma_test_2026, para mantener la misma forma de trabajar entre proyectos.
-
-Si se quisiera quitar la dependencia, el repositorio y los casos de uso ya están paginados (`page`, `itemsPerPage`). Solo habría que reemplazar el `PagingController` del ViewModel por un control manual de página y un `NotificationListener` en la pantalla.
+Todas las notas se cargan al abrir el home porque el estado global es la fuente de la UI. Paginar no ahorraría lecturas: `shared_preferences` carga todo al abrirse y las notas se guardan en claves separadas, así que ordenarlas por fecha ya obliga a leerlas todas. El dibujo sí es perezoso, gracias a `SliverMasonryGrid`.
 
 ## Archivos que no se versionan
 
@@ -264,5 +280,6 @@ El [.gitignore](.gitignore) excluye todo lo que es local a la máquina o sensibl
 - La app está solo en español (`es`).
 - Las notas del flavor `mock` viven en memoria y se pierden al cerrar la app.
 - El editor no se cierra con el gesto de deslizar hacia atrás de iOS, para poder guardar lo pendiente antes de salir; se sale con el botón de la barra superior.
-- La vista previa de la lista muestra el texto con sus marcas de formato tal cual (`**texto**`).
+- Las tareas se marcan desde el editor; en la lista solo se ve su estado.
+- La captura del editor es de la versión anterior, de texto libre.
 - Las notas guardadas con la cursiva vieja (`*texto*`) ya no se ven en cursiva.
