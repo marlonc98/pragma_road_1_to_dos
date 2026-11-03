@@ -6,6 +6,7 @@ import 'package:gestor_tareas_personales/presentation/constants/text_constants.d
 import 'package:gestor_tareas_personales/presentation/pages/note_editor/note_editor_page.dart';
 import 'package:gestor_tareas_personales/presentation/pages/notes/notes_page.dart';
 import 'package:gestor_tareas_personales/presentation/pages/notes/widgets/note_options_bottom_sheet.dart';
+import 'package:gestor_tareas_personales/presentation/pages/settings/settings_page.dart';
 import 'package:gestor_tareas_personales/presentation/core/view_model.dart';
 
 class NotesPageViewModel extends ViewModel<NotesPage> {
@@ -38,6 +39,11 @@ class NotesPageViewModel extends ViewModel<NotesPage> {
   void handleClearSearch() {
     searchController.clear();
     notifyListeners();
+  }
+
+  Future<void> handleOpenSettings() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    await context.push(SettingsPage.route);
   }
 
   Future<void> handleCreateNote() => _openEditor(null);

@@ -31,12 +31,23 @@ class NotesPageScreen extends ConsumerWidget {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: NotesSearchBarWidget(
-                controller: vm.searchController,
-                hintText: i18n(TextConstants.notesSearchHint),
-                onChanged: vm.handleSearchChanged,
-                onClear: vm.handleClearSearch,
+              padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: NotesSearchBarWidget(
+                      controller: vm.searchController,
+                      hintText: i18n(TextConstants.notesSearchHint),
+                      onChanged: vm.handleSearchChanged,
+                      onClear: vm.handleClearSearch,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.settings_outlined),
+                    tooltip: i18n(TextConstants.notesSettings),
+                    onPressed: vm.handleOpenSettings,
+                  ),
+                ],
               ),
             ),
             Expanded(
