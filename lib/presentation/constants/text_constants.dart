@@ -22,8 +22,24 @@ class TextConstants {
   static const noteDeleted = "noteDeleted";
   static const notesCreate = "notesCreate";
   static const notesClearSearch = "notesClearSearch";
+  static const notesSettings = "notesSettings";
 
   static const noteEditorHint = "noteEditorHint";
+  static const noteEditorTaskHint = "noteEditorTaskHint";
+  static const noteEditorAddTask = "noteEditorAddTask";
+  static const noteEditorDeleteTask = "noteEditorDeleteTask";
   static const noteEditorSaving = "noteEditorSaving";
   static const noteEditorSaved = "noteEditorSaved";
+  static const noteEditorEdit = "noteEditorEdit";
+  static const noteEditorSave = "noteEditorSave";
+  static const noteEditorCancel = "noteEditorCancel";
+  static const noteEditorDiscard = "noteEditorDiscard";
+  static const noteEditorUnsavedTitle = "noteEditorUnsavedTitle";
+
+  static const settingsTitle = "settingsTitle";
+  static const settingsAutoSave = "settingsAutoSave";
+  static const settingsAutoSaveDescription = "settingsAutoSaveDescription";
+  static const settingsRequireEditMode = "settingsRequireEditMode";
+  static const settingsRequireEditModeDescription =
+      "settingsRequireEditModeDescription";
 }
