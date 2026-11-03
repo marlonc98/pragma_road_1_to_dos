@@ -129,7 +129,8 @@ flowchart TB
 ```
 lib/
 ├── domain/              # Reglas de negocio puras, sin Flutter ni detalles de almacenamiento
-│   ├── entities/         # NoteEntity, AsyncState<T>, SearchResult<T>
+│   ├── core/             # AsyncState<T>, SearchResult<T>
+│   ├── entities/         # NoteEntity, TaskEntity, SettingsEntity
 │   ├── repositories/     # Contratos abstractos (NoteRepository, LocalizationRepository)
 │   ├── use_cases/        # Una operación de negocio por clase (note/, load_use_case.dart)
 │   ├── states/           # Contratos de estado global (LocalizationState, NotesState, SettingsState)
@@ -150,7 +151,7 @@ lib/
 │   ├── widgets/          # Reutilizables: buttons/ y loaders_status/ (carga, error, sin resultados)
 │   ├── helpers/          # FunctionsHelper: espera a que se termine de escribir
 │   ├── states/           # Implementaciones Riverpod de los estados
-│   ├── utils/            # ViewModel base + StfViewModelAdapter
+│   ├── core/             # ViewModel base + StfViewModelAdapter
 │   ├── constants/        # TextConstants (claves de traducción) y MarkdownConstants
 │   ├── router.dart       # Rutas con go_router
 │   └── app.dart          # MaterialApp.router
@@ -181,7 +182,7 @@ test/                           # Tests del repositorio, estado, casos de uso, p
 
 ### Manejo de resultados asíncronos: `AsyncState<T>`
 
-Los repositorios devuelven [AsyncState<T>](lib/domain/entities/petition_status_entity.dart): un wrapper con `status` (`notStarted` / `loading` / `complete` / `failed`), `data` y `error`. Los errores se muestran traducidos a partir de las claves de [ErrorsConstants](lib/domain/constants/errors_constants.dart).
+Los repositorios devuelven [AsyncState<T>](lib/domain/core/async_state.dart): un wrapper con `status` (`notStarted` / `loading` / `complete` / `failed`), `data` y `error`. Los errores se muestran traducidos a partir de las claves de [ErrorsConstants](lib/domain/constants/errors_constants.dart).
 
 ### Cómo se guardan las notas
 
