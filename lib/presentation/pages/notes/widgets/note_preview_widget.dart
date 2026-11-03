@@ -47,7 +47,6 @@ class NotePreviewWidget extends StatelessWidget {
                 Text.rich(
                   NoteEditingController.formattedSpan(
                     note.content!.trim(),
-                    listPrefixStyle: TextStyle(color: colorScheme.outline),
                   ),
                   maxLines: 10,
                   overflow: TextOverflow.ellipsis,

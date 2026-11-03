@@ -3,8 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gestor_tareas_personales/presentation/pages/note_editor/controllers/note_editing_controller.dart';
 
 void main() {
-  const titleStyle = TextStyle(fontSize: 24);
-
   Future<TextSpan> buildSpan(
     WidgetTester tester,
     NoteEditingController controller,
@@ -24,24 +22,10 @@ void main() {
     return span;
   }
 
-  testWidgets('pinta el primer renglón como título sin perder texto', (
-    tester,
-  ) async {
-    final controller = NoteEditingController(text: 'Título\ncontenido')
-      ..titleStyle = titleStyle;
-    final span = await buildSpan(tester, controller);
-    expect(span.toPlainText(), 'Título\ncontenido');
-    final children = span.children!.cast<TextSpan>();
-    expect(children.first.text, 'Título');
-    expect(children.first.style, titleStyle);
-    expect(children.last.style, isNull);
-  });
-
   testWidgets('subraya el rango que el teclado está componiendo', (
     tester,
   ) async {
     final controller = NoteEditingController()
-      ..titleStyle = titleStyle
       ..value = const TextEditingValue(
         text: 'Hola mun\nx',
         selection: TextSelection.collapsed(offset: 8),
@@ -53,16 +37,13 @@ void main() {
       (child) => child.text == 'mun',
     );
     expect(composing.style?.decoration, TextDecoration.underline);
-    expect(composing.style?.fontSize, 24);
   });
 
   testWidgets('aplica el formato y oculta las marcas sin perder texto', (
     tester,
   ) async {
-    const text = 'Título\n- uno **dos** fd_tres_ ~~cuatro~~';
-    final controller = NoteEditingController(text: text)
-      ..titleStyle = titleStyle
-      ..markerStyle = const TextStyle(color: Colors.grey);
+    const text = 'uno **dos** fd_tres_';
+    final controller = NoteEditingController(text: text);
     final span = await buildSpan(tester, controller);
     // Si no coincide, el cursor del TextField se descuadra
     expect(span.toPlainText(), text);
@@ -70,13 +51,23 @@ void main() {
     final children = span.children!.cast<TextSpan>();
     TextStyle? styleOf(String part) =>
         children.firstWhere((child) => child.text == part).style;
-    expect(styleOf('- ')?.color, Colors.grey);
     expect(styleOf('**')?.color, Colors.transparent);
     expect(styleOf('**')?.fontSize, lessThan(1));
     expect(styleOf('dos')?.fontWeight, FontWeight.bold);
     // La cursiva funciona dentro de una palabra
     expect(styleOf('tres')?.fontStyle, FontStyle.italic);
-    expect(styleOf('cuatro')?.decoration, TextDecoration.lineThrough);
+  });
+
+  testWidgets('el tachado ya no es un formato: ~~ se ve tal cual', (
+    tester,
+  ) async {
+    const text = 'uno ~~dos~~';
+    final span = await buildSpan(tester, NoteEditingController(text: text));
+    expect(span.toPlainText(), text);
+    for (final child in span.children!.cast<TextSpan>()) {
+      expect(child.style?.decoration, isNot(TextDecoration.lineThrough));
+      expect(child.style?.color, isNot(Colors.transparent));
+    }
   });
 
   testWidgets('**_x_** aplica negrita y cursiva', (tester) async {
@@ -159,89 +150,6 @@ void main() {
     });
   });
 
-  group('Enter dentro de un formato', () {
-    NoteEditingController pressEnter(String text, int offset) {
-      final controller = NoteEditingController(text: text)
-        ..selection = TextSelection.collapsed(offset: offset);
-      controller.value = TextEditingValue(
-        text: text.replaceRange(offset, offset, '\n'),
-        selection: TextSelection.collapsed(offset: offset + 1),
-      );
-      return controller;
-    }
-
-    test('cierra el formato antes del salto y lo reabre después', () {
-      // T\n**hola** con el cursor entre "ho" y "la"
-      final controller = pressEnter('T\n**hola**', 6);
-      expect(controller.text, 'T\n**ho**\n**la**');
-      expect(controller.selection.baseOffset, 11); // antes de "la"
-    });
-
-    test('al final del formato el salto va después de las marcas', () {
-      final controller = pressEnter('T\n**hola**', 8);
-      expect(controller.text, 'T\n**hola**\n');
-      expect(controller.selection.baseOffset, 11);
-    });
-
-    test('al inicio del formato el salto va antes de las marcas', () {
-      final controller = pressEnter('T\n**hola**', 4);
-      expect(controller.text, 'T\n\n**hola**');
-      expect(controller.selection.baseOffset, 3);
-    });
-
-    test('respeta formatos anidados', () {
-      // T\n~~**ab**~~ con el cursor entre a y b
-      final controller = pressEnter('T\n~~**ab**~~', 7);
-      expect(controller.text, 'T\n~~**a**~~\n~~**b**~~');
-    });
-
-    test('fuera de un formato es un Enter normal', () {
-      final controller = pressEnter('T\nhola', 4);
-      expect(controller.text, 'T\nho\nla');
-      expect(controller.selection.baseOffset, 5);
-    });
-  });
-
-  group('listas con Enter', () {
-    NoteEditingController pressEnter(String text, int offset) {
-      final controller = NoteEditingController(text: text)
-        ..selection = TextSelection.collapsed(offset: offset);
-      controller.value = TextEditingValue(
-        text: text.replaceRange(offset, offset, '\n'),
-        selection: TextSelection.collapsed(offset: offset + 1),
-      );
-      return controller;
-    }
-
-    test('Enter en un item crea otro item', () {
-      final controller = pressEnter('T\n- uno', 7);
-      expect(controller.text, 'T\n- uno\n- ');
-      expect(controller.selection.baseOffset, 10);
-    });
-
-    test('un segundo Enter sobre el item vacío termina la lista', () {
-      final controller = pressEnter('T\n- uno\n- ', 10);
-      expect(controller.text, 'T\n- uno\n');
-      expect(controller.selection.baseOffset, 8);
-    });
-
-    test('sin la viñeta es un Enter normal', () {
-      final controller = pressEnter('T\nuno', 5);
-      expect(controller.text, 'T\nuno\n');
-    });
-
-    test('el título no es lista', () {
-      final controller = pressEnter('- T', 3);
-      expect(controller.text, '- T\n');
-    });
-
-    test('continúa la lista y el formato a la vez', () {
-      // T\n- **ab** con el cursor entre a y b
-      final controller = pressEnter('T\n- **ab**', 7);
-      expect(controller.text, 'T\n- **a**\n- **b**');
-    });
-  });
-
   group('combinar y quitar formatos con la barra', () {
     Future<List<TextSpan>> render(
       WidgetTester tester,
@@ -256,7 +164,7 @@ void main() {
 
     void expectNoVisibleMarkers(List<TextSpan> spans) {
       for (final span in spans) {
-        if (span.text!.contains(RegExp(r'[*_~]'))) {
+        if (span.text!.contains(RegExp(r'[*_]'))) {
           expect(span.style?.color, Colors.transparent, reason: span.text);
         }
       }
@@ -287,28 +195,22 @@ void main() {
     final orders = [
       for (final a in all)
         for (final b in all)
-          for (final c in all)
-            if ({a, b, c}.length == 3) [a, b, c],
+          if (a != b) [a, b],
     ];
 
     for (final order in orders) {
       testWidgets('poner ${order.map((f) => f.name).join(', ')}', (
         tester,
       ) async {
-        final controller = select('T\n- texto', 'texto');
+        final controller = select('T\ntexto', 'texto');
         order.forEach(controller.toggleFormat);
         final spans = await render(tester, controller);
         final style = styleOf(spans, 'texto');
         expect(style?.fontWeight, FontWeight.bold, reason: controller.text);
         expect(style?.fontStyle, FontStyle.italic, reason: controller.text);
-        expect(
-          style?.decoration,
-          TextDecoration.lineThrough,
-          reason: controller.text,
-        );
         expectNoVisibleMarkers(spans);
 
-        // Quitar cada uno deja los otros dos
+        // Quitar uno deja el otro
         for (final removed in all) {
           final copy = NoteEditingController()..value = controller.value;
           copy.toggleFormat(removed);
@@ -323,11 +225,6 @@ void main() {
             afterStyle?.fontStyle == FontStyle.italic,
             removed != MarkdownFormat.italic,
             reason: 'cursiva al quitar ${removed.name}: ${copy.text}',
-          );
-          expect(
-            afterStyle?.decoration == TextDecoration.lineThrough,
-            removed != MarkdownFormat.strikethrough,
-            reason: 'tachado al quitar ${removed.name}: ${copy.text}',
           );
           expectNoVisibleMarkers(after);
         }
@@ -434,8 +331,6 @@ void main() {
           final actual = switch (format) {
             MarkdownFormat.bold => style?.fontWeight == FontWeight.bold,
             MarkdownFormat.italic => style?.fontStyle == FontStyle.italic,
-            MarkdownFormat.strikethrough =>
-              style?.decoration == TextDecoration.lineThrough,
           };
           expect(
             actual,
@@ -444,7 +339,7 @@ void main() {
           );
         }
         for (final span in spans) {
-          if (span.text!.contains(RegExp(r'[*_~]'))) {
+          if (span.text!.contains(RegExp(r'[*_]'))) {
             expect(
               span.style?.color,
               Colors.transparent,
@@ -496,7 +391,7 @@ void main() {
       reason: controller.text,
     );
     for (final span in spans) {
-      if (span.text!.contains(RegExp(r'[*_~]'))) {
+      if (span.text!.contains(RegExp(r'[*_]'))) {
         expect(span.style?.color, Colors.transparent, reason: controller.text);
       }
     }
@@ -505,20 +400,18 @@ void main() {
   group('preview sin marcas', () {
     test('quita las marcas y conserva los estilos', () {
       final span = NoteEditingController.formattedSpan(
-        'hola **negrita _ambas_** y ~~tachado~~',
+        'hola **negrita _ambas_**',
       );
-      expect(span.toPlainText(), 'hola negrita ambas y tachado');
+      expect(span.toPlainText(), 'hola negrita ambas');
       final children = span.children!.cast<TextSpan>();
       final ambas = children.firstWhere((child) => child.text == 'ambas');
       expect(ambas.style?.fontWeight, FontWeight.bold);
       expect(ambas.style?.fontStyle, FontStyle.italic);
-      final tachado = children.firstWhere((child) => child.text == 'tachado');
-      expect(tachado.style?.decoration, TextDecoration.lineThrough);
     });
 
-    test('deja visibles las marcas sin pareja y la viñeta de lista', () {
-      final span = NoteEditingController.formattedSpan('- item\n**abierto');
-      expect(span.toPlainText(), '- item\n**abierto');
+    test('deja visibles las marcas sin pareja', () {
+      final span = NoteEditingController.formattedSpan('**abierto');
+      expect(span.toPlainText(), '**abierto');
     });
   });
 }

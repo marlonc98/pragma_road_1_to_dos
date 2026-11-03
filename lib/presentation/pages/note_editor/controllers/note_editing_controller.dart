@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:gestor_tareas_personales/presentation/constants/markdown_constants.dart';
 
 class NoteEditingController extends TextEditingController {
-  TextStyle? titleStyle;
-  TextStyle markerStyle = const TextStyle(color: Colors.grey);
-
   NoteEditingController({super.text});
 
   static const _hiddenMarkerStyle = TextStyle(
@@ -15,44 +12,22 @@ class NoteEditingController extends TextEditingController {
 
   static const _emptyPairMarkers = [
     MarkdownConstants.bold,
-    MarkdownConstants.strikethrough,
     MarkdownConstants.italic,
   ];
 
   //#region ------------- Pintado -------------------------//
-  static TextSpan formattedSpan(
-    String text, {
-    TextStyle? style,
-    TextStyle? listPrefixStyle,
-  }) {
-    final ranges = <_StyledRange>[];
-
-    var lineStart = 0;
-    for (final line in text.split('\n')) {
-      if (listPrefixStyle != null &&
-          line.startsWith(MarkdownConstants.listPrefix)) {
-        ranges.add(
-          _StyledRange(
-            lineStart,
-            lineStart + MarkdownConstants.listPrefix.length,
-            listPrefixStyle,
-          ),
-        );
-      }
-      lineStart += line.length + 1;
-    }
-
-    for (final format in _parseFormats(text)) {
-      if (format.type != null) {
-        ranges.add(
-          _StyledRange(format.innerStart, format.innerEnd, format.type!.style),
-        );
-      }
-    }
-
+  static TextSpan formattedSpan(String text, {TextStyle? style}) {
     return TextSpan(
       style: style,
-      children: _buildSegments(text, ranges, removed: _markerRanges(text)),
+      children: _buildSegments(text, [
+        for (final format in _parseFormats(text))
+          if (format.type != null)
+            _StyledRange(
+              format.innerStart,
+              format.innerEnd,
+              format.type!.style,
+            ),
+      ], removed: _markerRanges(text)),
     );
   }
 
@@ -63,24 +38,6 @@ class NoteEditingController extends TextEditingController {
     required bool withComposing,
   }) {
     final ranges = <_StyledRange>[];
-
-    final breakIndex = text.indexOf('\n');
-    final titleEnd = breakIndex == -1 ? text.length : breakIndex;
-    if (titleStyle != null) ranges.add(_StyledRange(0, titleEnd, titleStyle!));
-
-    var lineStart = 0;
-    for (final line in text.split('\n')) {
-      if (lineStart > 0 && line.startsWith(MarkdownConstants.listPrefix)) {
-        ranges.add(
-          _StyledRange(
-            lineStart,
-            lineStart + MarkdownConstants.listPrefix.length,
-            markerStyle,
-          ),
-        );
-      }
-      lineStart += line.length + 1;
-    }
 
     for (final format in _parseFormats(text)) {
       if (format.type != null) {
@@ -160,81 +117,7 @@ class NoteEditingController extends TextEditingController {
       super.value = _skipMarkersOnMove(oldValue, newValue);
       return;
     }
-    super.value =
-        _handleLineBreak(oldValue, newValue) ??
-        _skipMarkersOnDelete(oldValue, newValue);
-  }
-
-  TextEditingValue? _handleLineBreak(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    if (!oldValue.selection.isValid || !oldValue.selection.isCollapsed) {
-      return null;
-    }
-    final oldText = oldValue.text;
-    var position = oldValue.selection.baseOffset;
-    final insertedLineBreak =
-        newValue.text == oldText.replaceRange(position, position, '\n');
-    if (!insertedLineBreak) return null;
-
-    final formats = _parseFormats(oldText);
-    var moved = true;
-    while (moved) {
-      moved = false;
-      for (final format in formats) {
-        if (position == format.innerEnd && position != format.end) {
-          position = format.end;
-          moved = true;
-        } else if (position == format.innerStart && position != format.start) {
-          position = format.start;
-          moved = true;
-        }
-      }
-    }
-
-    final enclosing =
-        formats
-            .where(
-              (format) =>
-                  format.innerStart < position && position < format.innerEnd,
-            )
-            .toList()
-          ..sort((a, b) => a.start.compareTo(b.start));
-    final closing = [
-      for (final format in enclosing.reversed)
-        oldText.substring(format.innerEnd, format.end),
-    ].join();
-    final opening = [
-      for (final format in enclosing)
-        oldText.substring(format.start, format.innerStart),
-    ].join();
-    const listPrefix = MarkdownConstants.listPrefix;
-    final lineStart = position == 0
-        ? 0
-        : oldText.lastIndexOf('\n', position - 1) + 1;
-    final lineEnd = oldText.indexOf('\n', position);
-    final line = oldText.substring(
-      lineStart,
-      lineEnd == -1 ? oldText.length : lineEnd,
-    );
-    final isListItem = lineStart > 0 && line.startsWith(listPrefix);
-    if (isListItem && line == listPrefix) {
-      return TextEditingValue(
-        text: oldText.replaceRange(
-          lineStart,
-          lineStart + listPrefix.length,
-          '',
-        ),
-        selection: TextSelection.collapsed(offset: lineStart),
-      );
-    }
-
-    final inserted = '$closing\n${isListItem ? listPrefix : ''}$opening';
-    return TextEditingValue(
-      text: oldText.replaceRange(position, position, inserted),
-      selection: TextSelection.collapsed(offset: position + inserted.length),
-    );
+    super.value = _skipMarkersOnDelete(oldValue, newValue);
   }
 
   TextEditingValue _skipMarkersOnMove(
@@ -590,11 +473,7 @@ class _StyledRange {
 
 enum MarkdownFormat {
   bold(MarkdownConstants.bold, TextStyle(fontWeight: FontWeight.bold)),
-  italic(MarkdownConstants.italic, TextStyle(fontStyle: FontStyle.italic)),
-  strikethrough(
-    MarkdownConstants.strikethrough,
-    TextStyle(decoration: TextDecoration.lineThrough),
-  );
+  italic(MarkdownConstants.italic, TextStyle(fontStyle: FontStyle.italic));
 
   final String marker;
   final TextStyle style;

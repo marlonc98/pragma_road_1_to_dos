@@ -18,9 +18,6 @@ class NoteEditorPageScreen extends ConsumerWidget {
     final titleStyle = theme.textTheme.headlineSmall?.copyWith(
       fontWeight: FontWeight.w600,
     );
-    vm.controller
-      ..titleStyle = titleStyle
-      ..markerStyle = TextStyle(color: theme.colorScheme.outline);
 
     return PopScope(
       canPop: false,
@@ -74,8 +71,6 @@ class NoteEditorPageScreen extends ConsumerWidget {
               MarkdownToolbarWidget(
                 onBold: vm.handleBold,
                 onItalic: vm.handleItalic,
-                onStrikethrough: vm.handleStrikethrough,
-                onList: vm.handleList,
               ),
             ],
           ),

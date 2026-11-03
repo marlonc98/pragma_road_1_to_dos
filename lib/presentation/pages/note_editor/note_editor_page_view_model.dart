@@ -1,11 +1,9 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gestor_tareas_personales/dependency_injection.dart';
 import 'package:gestor_tareas_personales/domain/entities/note_entity.dart';
-import 'package:gestor_tareas_personales/presentation/constants/markdown_constants.dart';
 import 'package:gestor_tareas_personales/presentation/pages/note_editor/controllers/note_editing_controller.dart';
 import 'package:gestor_tareas_personales/presentation/pages/note_editor/note_editor_page.dart';
 import 'package:gestor_tareas_personales/presentation/core/view_model.dart';
@@ -129,30 +127,6 @@ class NoteEditorPageViewModel extends ViewModel<NoteEditorPage> {
   void handleBold() => controller.toggleFormat(MarkdownFormat.bold);
 
   void handleItalic() => controller.toggleFormat(MarkdownFormat.italic);
-
-  void handleStrikethrough() =>
-      controller.toggleFormat(MarkdownFormat.strikethrough);
-
-  void handleList() {
-    final text = controller.text;
-    final selection = controller.selection;
-    if (!selection.isValid) return;
-    final lineStart = selection.start == 0
-        ? 0
-        : text.lastIndexOf('\n', selection.start - 1) + 1;
-    const prefix = MarkdownConstants.listPrefix;
-    final hasPrefix = text.startsWith(prefix, lineStart);
-    final shift = hasPrefix ? -prefix.length : prefix.length;
-    controller.value = TextEditingValue(
-      text: hasPrefix
-          ? text.replaceRange(lineStart, lineStart + prefix.length, '')
-          : text.replaceRange(lineStart, lineStart, prefix),
-      selection: TextSelection(
-        baseOffset: max(lineStart, selection.baseOffset + shift),
-        extentOffset: max(lineStart, selection.extentOffset + shift),
-      ),
-    );
-  }
 
   ({String? title, String? content}) _parseText(String text) {
     final breakIndex = text.indexOf('\n');
