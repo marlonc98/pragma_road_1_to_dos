@@ -13,11 +13,13 @@ import 'package:gestor_tareas_personales/domain/use_cases/settings/save_settings
 import 'package:gestor_tareas_personales/domain/use_cases/load_use_case.dart';
 import 'package:gestor_tareas_personales/domain/use_cases/note/delete_note_use_case.dart';
 import 'package:gestor_tareas_personales/domain/use_cases/note/get_notes_use_case.dart';
-import 'package:gestor_tareas_personales/domain/use_cases/note/get_pinned_notes_use_case.dart';
 import 'package:gestor_tareas_personales/domain/use_cases/note/pin_note_use_case.dart';
 import 'package:gestor_tareas_personales/domain/use_cases/note/save_note_use_case.dart';
 import 'package:gestor_tareas_personales/flavors/flavors.dart';
+import 'package:gestor_tareas_personales/domain/core/async_state.dart';
+import 'package:gestor_tareas_personales/domain/entities/note_entity.dart';
 import 'package:gestor_tareas_personales/presentation/states/localization_state_impl.dart';
+import 'package:gestor_tareas_personales/presentation/states/notes_state_impl.dart';
 import 'package:gestor_tareas_personales/presentation/states/settings_state_impl.dart';
 
 //#region ------------- repositories -------------------------//
@@ -43,6 +45,10 @@ final localizationStateProvider =
     NotifierProvider<LocalizationStateImpl, Map<String, String>>(
       LocalizationStateImpl.new,
     );
+final notesStateProvider =
+    NotifierProvider<NotesStateImpl, AsyncState<List<NoteEntity>>>(
+      NotesStateImpl.new,
+    );
 final settingsStateProvider =
     NotifierProvider<SettingsStateImpl, SettingsEntity>(SettingsStateImpl.new);
 //#endregion ---------- States ------------------------//
@@ -56,20 +62,28 @@ final loadUseCaseProvider = Provider<LoadUseCase>(
 );
 //#region ------------- note -------------------------//
 final getNotesUseCaseProvider = Provider<GetNotesUseCase>(
-  (ref) => GetNotesUseCase(noteRepository: ref.read(noteRepositoryProvider)),
-);
-final getPinnedNotesUseCaseProvider = Provider<GetPinnedNotesUseCase>(
-  (ref) =>
-      GetPinnedNotesUseCase(noteRepository: ref.read(noteRepositoryProvider)),
+  (ref) => GetNotesUseCase(
+    noteRepository: ref.read(noteRepositoryProvider),
+    notesState: ref.read(notesStateProvider.notifier),
+  ),
 );
 final saveNoteUseCaseProvider = Provider<SaveNoteUseCase>(
-  (ref) => SaveNoteUseCase(noteRepository: ref.read(noteRepositoryProvider)),
+  (ref) => SaveNoteUseCase(
+    noteRepository: ref.read(noteRepositoryProvider),
+    notesState: ref.read(notesStateProvider.notifier),
+  ),
 );
 final deleteNoteUseCaseProvider = Provider<DeleteNoteUseCase>(
-  (ref) => DeleteNoteUseCase(noteRepository: ref.read(noteRepositoryProvider)),
+  (ref) => DeleteNoteUseCase(
+    noteRepository: ref.read(noteRepositoryProvider),
+    notesState: ref.read(notesStateProvider.notifier),
+  ),
 );
 final pinNoteUseCaseProvider = Provider<PinNoteUseCase>(
-  (ref) => PinNoteUseCase(noteRepository: ref.read(noteRepositoryProvider)),
+  (ref) => PinNoteUseCase(
+    noteRepository: ref.read(noteRepositoryProvider),
+    notesState: ref.read(notesStateProvider.notifier),
+  ),
 );
 //#endregion ---------- note -------------------------//
 //#region ------------- settings -------------------------//

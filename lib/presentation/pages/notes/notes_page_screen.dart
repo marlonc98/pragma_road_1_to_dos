@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:gestor_tareas_personales/dependency_injection.dart';
 import 'package:gestor_tareas_personales/domain/entities/note_entity.dart';
 import 'package:gestor_tareas_personales/presentation/constants/text_constants.dart';
@@ -8,8 +8,7 @@ import 'package:gestor_tareas_personales/presentation/pages/notes/notes_page_vie
 import 'package:gestor_tareas_personales/presentation/pages/notes/widgets/notes_grid_widget.dart';
 import 'package:gestor_tareas_personales/presentation/pages/notes/widgets/notes_search_bar_widget.dart';
 import 'package:gestor_tareas_personales/presentation/pages/notes/widgets/note_preview_widget.dart';
-import 'package:gestor_tareas_personales/presentation/widgets/loaders_status/error_loading_widget.dart';
-import 'package:gestor_tareas_personales/presentation/widgets/loaders_status/loading_widget.dart';
+import 'package:gestor_tareas_personales/presentation/widgets/loaders_status/loader_screen_widget.dart';
 import 'package:gestor_tareas_personales/presentation/widgets/loaders_status/no_results_widget.dart';
 
 class NotesPageScreen extends ConsumerWidget {
@@ -20,6 +19,7 @@ class NotesPageScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(localizationStateProvider);
     final i18n = ref.read(localizationStateProvider.notifier).translate;
+    final notes = ref.watch(notesStateProvider);
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         tooltip: i18n(TextConstants.notesCreate),
@@ -42,10 +42,12 @@ class NotesPageScreen extends ConsumerWidget {
             Expanded(
               child: RefreshIndicator(
                 onRefresh: vm.handleLoadNotes,
-                child: PagingListener<int, NoteEntity>(
-                  controller: vm.pagingController,
-                  builder: (context, state, fetchNextPage) =>
-                      _buildNotes(context, i18n, state, fetchNextPage),
+                child: LoaderScreenWidget<List<NoteEntity>?>(
+                  status: notes,
+                  allowNull: true,
+                  onRetry: vm.handleLoadNotes,
+                  builder: (context, data) =>
+                      _buildNotes(context, i18n, data ?? []),
                 ),
               ),
             ),
@@ -58,20 +60,16 @@ class NotesPageScreen extends ConsumerWidget {
   Widget _buildNotes(
     BuildContext context,
     String Function(String, {Map<String, dynamic>? values}) i18n,
-    PagingState<int, NoteEntity> state,
-    VoidCallback fetchNextPage,
+    List<NoteEntity> notes,
   ) {
-    final pinned = vm.pinnedNotes.data ?? [];
-    final hasOthers = state.items?.isNotEmpty ?? false;
+    final visible = vm.visibleNotes(notes);
+    final pinned = visible.where((note) => note.pinned).toList();
+    final others = visible.where((note) => !note.pinned).toList();
     return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
-        if (vm.pinnedNotes.isError)
-          SliverToBoxAdapter(
-            child: ErrorLoadingWidget(
-              onRetry: vm.handleRetry,
-              error: i18n(vm.pinnedNotes.error ?? ''),
-            ),
-          ),
+        if (visible.isEmpty)
+          SliverFillRemaining(hasScrollBody: false, child: _buildEmpty(i18n)),
         if (pinned.isNotEmpty)
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
@@ -85,7 +83,7 @@ class NotesPageScreen extends ConsumerWidget {
                     onTap: vm.handleOpenNote,
                     onLongPress: vm.handleNoteOptions,
                   ),
-                  if (hasOthers)
+                  if (others.isNotEmpty)
                     _buildSectionTitle(
                       context,
                       i18n(TextConstants.notesOthers),
@@ -94,33 +92,21 @@ class NotesPageScreen extends ConsumerWidget {
               ),
             ),
           ),
-        SliverPadding(
-          padding: EdgeInsets.fromLTRB(12, pinned.isEmpty ? 8 : 0, 12, 96),
-          sliver: PagedSliverMasonryGrid<int, NoteEntity>.count(
-            state: state,
-            fetchNextPage: fetchNextPage,
-            crossAxisCount: 2,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            builderDelegate: PagedChildBuilderDelegate<NoteEntity>(
-              itemBuilder: (context, note, index) => NotePreviewWidget(
-                note: note,
-                onTap: () => vm.handleOpenNote(note),
-                onLongPress: () => vm.handleNoteOptions(note),
+        if (others.isNotEmpty)
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(12, pinned.isEmpty ? 8 : 0, 12, 96),
+            sliver: SliverMasonryGrid.count(
+              crossAxisCount: 2,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childCount: others.length,
+              itemBuilder: (context, index) => NotePreviewWidget(
+                note: others[index],
+                onTap: () => vm.handleOpenNote(others[index]),
+                onLongPress: () => vm.handleNoteOptions(others[index]),
               ),
-              firstPageProgressIndicatorBuilder: (context) =>
-                  const LoadingWidget(),
-              firstPageErrorIndicatorBuilder: (context) => ErrorLoadingWidget(
-                onRetry: vm.handleRetry,
-                error: state.error?.toString(),
-              ),
-              noItemsFoundIndicatorBuilder: (context) =>
-                  pinned.isNotEmpty || vm.pinnedNotes.isLoading
-                  ? const SizedBox.shrink()
-                  : _buildEmpty(i18n),
             ),
           ),
-        ),
       ],
     );
   }

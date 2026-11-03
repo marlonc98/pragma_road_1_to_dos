@@ -1,16 +1,17 @@
-/// Nota del usuario, al estilo de Google Keep.
+import 'task_entity.dart';
+
+/// Lista de tareas del usuario, al estilo de Google Keep.
 ///
-/// Puede tener solo título, solo contenido o ambos, pero nunca ninguno de los
-/// dos: una nota vacía ([isEmpty]) no se guarda.
+/// Puede tener solo título, solo tareas o ambos, pero nunca ninguno de los
+/// dos: una lista vacía ([isEmpty]) no se guarda.
 class NoteEntity {
   final String id;
 
-  /// Primer renglón del editor. Se muestra más grande.
+  /// Título de la lista. Se muestra más grande.
   final String? title;
 
-  /// Resto del texto después del título. Puede traer marcas Markdown
-  /// (`**negrita**`, `_cursiva_`, `~~tachado~~`, `- ` para listas).
-  final String? content;
+  /// Tareas de la lista, en el orden en que se muestran.
+  final List<TaskEntity> content;
 
   /// Si la nota está fijada arriba de la lista. Máximo 5 notas fijadas.
   final bool pinned;
@@ -25,7 +26,7 @@ class NoteEntity {
   NoteEntity({
     required this.id,
     this.title,
-    this.content,
+    this.content = const [],
     this.pinned = false,
     required this.createdAt,
     required this.updatedAt,
@@ -34,18 +35,26 @@ class NoteEntity {
   /// Si el título tiene algo más que espacios.
   bool get hasTitle => title?.trim().isNotEmpty ?? false;
 
-  /// Si el contenido tiene algo más que espacios.
-  bool get hasContent => content?.trim().isNotEmpty ?? false;
+  /// Si alguna tarea tiene algo más que espacios.
+  bool get hasContent => content.any((task) => task.content.trim().isNotEmpty);
 
   /// Si la nota no tiene título ni contenido. Una nota vacía no se guarda, y
   /// si se vacía al editarla, se borra al salir del editor.
   bool get isEmpty => !hasTitle && !hasContent;
 
+  /// Si el título o alguna tarea contiene [query], sin importar mayúsculas.
+  bool matches(String query) {
+    final search = query.toLowerCase();
+    return search.isEmpty ||
+        (title?.toLowerCase().contains(search) ?? false) ||
+        content.any((task) => task.content.toLowerCase().contains(search));
+  }
+
   /// Copia la nota cambiando solo los campos indicados. `id` y `createdAt`
   /// nunca cambian.
   NoteEntity copyWith({
     String? title,
-    String? content,
+    List<TaskEntity>? content,
     bool? pinned,
     DateTime? updatedAt,
   }) {

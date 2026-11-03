@@ -1,23 +1,18 @@
-import 'package:gestor_tareas_personales/domain/entities/note_entity.dart';
 import 'package:gestor_tareas_personales/domain/core/async_state.dart';
-import 'package:gestor_tareas_personales/domain/core/search_result.dart';
+import 'package:gestor_tareas_personales/domain/entities/note_entity.dart';
 import 'package:gestor_tareas_personales/domain/repositories/note_repository.dart';
+import 'package:gestor_tareas_personales/domain/states/notes_state.dart';
 
 class GetNotesUseCase {
   final NoteRepository noteRepository;
+  final NotesState notesState;
 
-  GetNotesUseCase({required this.noteRepository});
+  GetNotesUseCase({required this.noteRepository, required this.notesState});
 
-  Future<AsyncState<SearchResult<NoteEntity>>> getNotes({
-    required int page,
-    required int itemsPerPage,
-    String? query,
-  }) => noteRepository.getNotes(
-    page: page,
-    itemsPerPage: itemsPerPage,
-    query: query?.trim(),
-  );
-
-  Future<AsyncState<NoteEntity>> getNoteById(String id) =>
-      noteRepository.getNoteById(id);
+  Future<AsyncState<List<NoteEntity>>> getNotes() async {
+    notesState.setLoading();
+    final response = await noteRepository.getNotes();
+    notesState.setNotes(response);
+    return response;
+  }
 }

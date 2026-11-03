@@ -3,6 +3,8 @@ import 'package:gestor_tareas_personales/domain/entities/note_entity.dart';
 import 'package:gestor_tareas_personales/presentation/pages/note_editor/controllers/note_editing_controller.dart';
 
 class NotePreviewWidget extends StatelessWidget {
+  static const int maxTasks = 10;
+
   final NoteEntity note;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
@@ -44,12 +46,43 @@ class NotePreviewWidget extends StatelessWidget {
                 ),
               if (note.hasTitle && note.hasContent) const SizedBox(height: 6),
               if (note.hasContent)
-                Text.rich(
-                  NoteEditingController.formattedSpan(
-                    note.content!.trim(),
+                for (final task in note.content.take(maxTasks))
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 2),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2, right: 6),
+                          child: Icon(
+                            task.completed
+                                ? Icons.check_box
+                                : Icons.check_box_outline_blank,
+                            size: 16,
+                            color: colorScheme.outline,
+                          ),
+                        ),
+                        Expanded(
+                          child: Text.rich(
+                            NoteEditingController.formattedSpan(
+                              task.content.trim(),
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                              decoration: task.completed
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  maxLines: 10,
-                  overflow: TextOverflow.ellipsis,
+              if (note.content.length > maxTasks)
+                Text(
+                  '...',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
