@@ -1,0 +1,6 @@
+#include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"
+#include "Generated.xcconfig"
+
+ASSET_PREFIX=mock
+BUNDLE_NAME=[MOCK] Gestor de Tareas
+BUNDLE_DISPLAY_NAME=[MOCK] Gestor de Tareas
