@@ -39,5 +39,12 @@
   "timeout": "La solicitud tardó demasiado",
   "emptyNote": "La lista necesita un título o una tarea",
   "maxPinnedNotes": "Solo puedes fijar hasta 5 listas",
-  "noteNotFound": "No se encontró la lista"
+  "noteNotFound": "No se encontró la lista",
+  "validatorRequired": "Este campo es obligatorio",
+  "validatorEmail": "Ingresa un correo válido",
+  "validatorMinLength": "Debe tener al menos {minLength} caracteres",
+  "validatorMaxLength": "Debe tener máximo {maxLength} caracteres",
+  "validatorIsNotNumber": "Ingresa un número válido",
+  "validatorMinValue": "El valor mínimo es {minValue}",
+  "validatorMaxValue": "El valor máximo es {maxValue}"
 }

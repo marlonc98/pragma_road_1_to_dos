@@ -42,4 +42,12 @@ class TextConstants {
   static const settingsRequireEditMode = "settingsRequireEditMode";
   static const settingsRequireEditModeDescription =
       "settingsRequireEditModeDescription";
+
+  static const validatorRequired = "validatorRequired";
+  static const validatorEmail = "validatorEmail";
+  static const validatorMinLength = "validatorMinLength";
+  static const validatorMaxLength = "validatorMaxLength";
+  static const validatorIsNotNumber = "validatorIsNotNumber";
+  static const validatorMinValue = "validatorMinValue";
+  static const validatorMaxValue = "validatorMaxValue";
 }
