@@ -4,10 +4,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gestor_tareas_personales/dependency_injection.dart';
-import 'package:gestor_tareas_personales/domain/constants/errors_constants.dart';
 import 'package:gestor_tareas_personales/domain/entities/note_entity.dart';
 import 'package:gestor_tareas_personales/domain/entities/settings_entity.dart';
 import 'package:gestor_tareas_personales/domain/entities/task_entity.dart';
+import 'package:gestor_tareas_personales/presentation/helpers/validators.dart';
 import 'package:gestor_tareas_personales/presentation/pages/note_editor/controllers/note_editing_controller.dart';
 import 'package:gestor_tareas_personales/presentation/pages/note_editor/controllers/task_row.dart';
 import 'package:gestor_tareas_personales/presentation/pages/note_editor/note_editor_page.dart';
@@ -18,6 +18,7 @@ enum SaveStatus { idle, saving, saved }
 
 class NoteEditorPageViewModel extends ViewModel<NoteEditorPage> {
   static const Duration autosaveDelay = Duration(milliseconds: 800);
+  static const int maxTextLength = 100;
 
   NoteEditorPageViewModel({
     required super.context,
@@ -40,6 +41,7 @@ class NoteEditorPageViewModel extends ViewModel<NoteEditorPage> {
     _savedSnapshot = _snapshot();
   }
 
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   final NoteEditingController titleController = NoteEditingController();
   final FocusNode titleFocusNode = FocusNode();
   final List<TaskRow> taskRows = [];
@@ -98,6 +100,39 @@ class NoteEditorPageViewModel extends ViewModel<NoteEditorPage> {
 
   bool get _isEmpty => _title == null && _tasks.isEmpty;
 
+  late final InputValidator _validateText = Validators.check(
+    ref.read(localizationStateProvider.notifier).translate,
+    required: true,
+    maxLength: maxTextLength,
+  );
+
+  String? validateTitle(String? text) => _validateText(text);
+
+  /// Las marcas sueltas (`****`) no cuentan como texto, igual que en [TaskRow].
+  String? validateTask(String? text) => _validateText(
+    NoteEditingController.formattedSpan(text ?? '').toPlainText(),
+  );
+
+  /// Si se puede guardar sin confirmar. Las filas vacías no cuentan: no se
+  /// guardan.
+  bool get _canAutoSave =>
+      validateTitle(titleController.text) == null &&
+      _tasks.every((task) => validateTask(task.content) == null);
+
+  /// Valida el formulario y, si falla, lleva el foco al primer campo con error.
+  bool _validateForm() {
+    final isValid = formKey.currentState!.validate();
+    if (!isValid) {
+      final focusNode = validateTitle(titleController.text) != null
+          ? titleFocusNode
+          : taskRows
+                .firstWhere((row) => validateTask(row.draft) != null)
+                .focusNode;
+      focusNode.requestFocus();
+    }
+    return isValid;
+  }
+
   /// Lo que se guardaría ahora. Las filas vacías no cuentan: no se guardan.
   String _snapshot() => jsonEncode([
     _title,
@@ -108,13 +143,14 @@ class NoteEditorPageViewModel extends ViewModel<NoteEditorPage> {
 
   void _onChanged() {
     if (!_hasUnsavedChanges) return;
+    if (saveStatus == SaveStatus.saved) {
+      // "Guardado" ya no es cierto: hay cambios sin guardar
+      saveStatus = SaveStatus.idle;
+      notifyListeners();
+    }
     if (_settings.autoSave) {
       _autosaveDebounce?.cancel();
       _autosaveDebounce = Timer(autosaveDelay, _enqueueSave);
-    } else if (saveStatus == SaveStatus.saved) {
-      // "Guardado" ya no es cierto: hay cambios sin confirmar
-      saveStatus = SaveStatus.idle;
-      notifyListeners();
     }
   }
 
@@ -128,7 +164,9 @@ class NoteEditorPageViewModel extends ViewModel<NoteEditorPage> {
     if (snapshot == _savedSnapshot) return;
     final title = _title;
     final tasks = _tasks;
-    if (title == null && tasks.isEmpty) return;
+    // Al editar se respetan las validaciones. En la vista previa solo se marcan
+    // tareas, y las listas viejas sin título también deben poder guardarlo.
+    if (isEditing ? !_canAutoSave : _isEmpty) return;
 
     final now = DateTime.now();
     final note = NoteEntity(
@@ -169,32 +207,21 @@ class NoteEditorPageViewModel extends ViewModel<NoteEditorPage> {
 
   Future<void> handleSave() async {
     _autosaveDebounce?.cancel();
-    if (_isEmpty) {
-      _showMessage(ErrorsConstants.emptyNote);
-      return;
-    }
+    if (!_validateForm()) return;
     await _enqueueSave();
     if (!mounted || _hasUnsavedChanges || !_settings.requireEditMode) return;
     FocusManager.instance.primaryFocus?.unfocus();
-    _removeBlankRows();
     isEditing = false;
     notifyListeners();
   }
 
-  void _removeBlankRows() {
-    final blank = taskRows.where((row) => row.isBlank).toList();
-    taskRows.removeWhere(blank.contains);
-    // Sus TextField siguen montados hasta el próximo frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      for (final row in blank) {
-        row.dispose();
-      }
-    });
-  }
-
   Future<void> handleExit() async {
     _autosaveDebounce?.cancel();
-    final mustConfirm = isEditing && !_settings.autoSave && _hasUnsavedChanges;
+    // Con autoguardado solo se pregunta si hay errores que impiden guardar
+    final mustConfirm =
+        isEditing &&
+        _hasUnsavedChanges &&
+        (!_settings.autoSave || (!_canAutoSave && !_isEmpty));
     if (mustConfirm) {
       final option = await showUnsavedChangesDialog(context);
       if (option == null || !mounted) return;
@@ -203,6 +230,7 @@ class NoteEditorPageViewModel extends ViewModel<NoteEditorPage> {
         context.pop();
         return;
       }
+      if (!_validateForm()) return;
     }
     if (_hasUnsavedChanges) await _enqueueSave();
     await _saveQueue;

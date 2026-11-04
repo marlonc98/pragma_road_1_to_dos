@@ -59,48 +59,58 @@ class NoteEditorPageScreen extends ConsumerWidget {
           child: Column(
             children: [
               Expanded(
-                child: ListView(
+                // Todas las filas se construyen para que el Form las valide
+                child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
-                  children: [
-                    if (vm.isEditing)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: _buildTitleField(i18n, theme, titleStyle),
-                      )
-                    else if (vm.title != null)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-                        child: Text.rich(
-                          NoteEditingController.formattedSpan(vm.title!),
-                          style: titleStyle,
-                        ),
-                      ),
-                    for (final row in vm.taskRows)
-                      if (vm.isEditing)
-                        TaskRowWidget(
-                          key: ValueKey(row.id),
-                          row: row,
-                          onToggle: () => vm.handleToggleTask(row),
-                          onEdited: vm.handleTaskEdited,
-                          onSubmitted: () => vm.handleTaskSubmitted(row),
-                          onDelete: () => vm.handleDeleteTask(row),
-                        )
-                      else
-                        TaskPreviewRowWidget(
-                          key: ValueKey(row.id),
-                          row: row,
-                          onToggle: () => vm.handleToggleTask(row),
-                        ),
-                    if (vm.isEditing)
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton.icon(
-                          icon: const Icon(Icons.add),
-                          label: Text(i18n(TextConstants.noteEditorAddTask)),
-                          onPressed: vm.handleAddTask,
-                        ),
-                      ),
-                  ],
+                  child: Form(
+                    key: vm.formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (vm.isEditing)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: _buildTitleField(i18n, theme, titleStyle),
+                          )
+                        else if (vm.title != null)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                            child: Text.rich(
+                              NoteEditingController.formattedSpan(vm.title!),
+                              style: titleStyle,
+                            ),
+                          ),
+                        for (final row in vm.taskRows)
+                          if (vm.isEditing)
+                            TaskRowWidget(
+                              key: ValueKey(row.id),
+                              row: row,
+                              validator: vm.validateTask,
+                              onToggle: () => vm.handleToggleTask(row),
+                              onEdited: vm.handleTaskEdited,
+                              onSubmitted: () => vm.handleTaskSubmitted(row),
+                              onDelete: () => vm.handleDeleteTask(row),
+                            )
+                          else
+                            TaskPreviewRowWidget(
+                              key: ValueKey(row.id),
+                              row: row,
+                              onToggle: () => vm.handleToggleTask(row),
+                            ),
+                        if (vm.isEditing)
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton.icon(
+                              icon: const Icon(Icons.add),
+                              label: Text(
+                                i18n(TextConstants.noteEditorAddTask),
+                              ),
+                              onPressed: vm.handleAddTask,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
               if (vm.isEditing)
@@ -120,9 +130,11 @@ class NoteEditorPageScreen extends ConsumerWidget {
     ThemeData theme,
     TextStyle? titleStyle,
   ) {
-    return TextField(
+    return TextFormField(
       controller: vm.titleController,
       focusNode: vm.titleFocusNode,
+      validator: vm.validateTitle,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       autofocus: vm.isNewNote,
       maxLines: null,
       keyboardType: TextInputType.text,
@@ -136,13 +148,17 @@ class NoteEditorPageScreen extends ConsumerWidget {
       ],
       // Sin esto, Enter le pasa el foco al siguiente botón
       onEditingComplete: () {},
-      onSubmitted: (_) => vm.handleTitleSubmitted(),
+      onFieldSubmitted: (_) => vm.handleTitleSubmitted(),
       style: titleStyle,
       decoration: InputDecoration(
         border: InputBorder.none,
         hintText: i18n(TextConstants.noteEditorHint),
-        hintStyle: titleStyle?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
+        hintStyle: WidgetStateTextStyle.resolveWith(
+          (states) => (titleStyle ?? const TextStyle()).copyWith(
+            color: states.contains(WidgetState.error)
+                ? theme.colorScheme.error
+                : theme.colorScheme.onSurfaceVariant,
+          ),
         ),
       ),
     );
