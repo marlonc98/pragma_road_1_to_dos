@@ -45,6 +45,8 @@ class AsyncState<T> {
       } else {
         errorGetted = error.toString();
       }
+    } else {
+      errorGetted = defaultError ?? ErrorsConstants.unknownError;
     }
     return AsyncState(
       status: PetitionStatus.failed,
