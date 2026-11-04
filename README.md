@@ -19,19 +19,23 @@ Proyecto construido con **Clean Architecture** (domain / data / presentation), M
 
 ## Capturas
 
-| Splash | Lista de notas | Búsqueda |
+| Splash | Listas | Búsqueda |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/01_splash.png" width="220" alt="Splash con el nombre de la app y la versión"> | <img src="docs/screenshots/02_notas.png" width="220" alt="Lista de notas con las secciones Fijadas y Otras"> | <img src="docs/screenshots/03_busqueda.png" width="220" alt="Búsqueda filtrando las notas por texto"> |
+| <img src="docs/screenshots/01_splash.png" width="220" alt="Splash con el nombre de la app y la versión"> | <img src="docs/screenshots/02_notas.png" width="220" alt="Listas con las secciones Fijadas y Otras"> | <img src="docs/screenshots/03_busqueda.png" width="220" alt="Búsqueda filtrando las listas por el texto de una tarea"> |
 
-| Opciones al mantener presionado | Editor con formato | Búsqueda sin resultados |
+| Opciones al mantener presionado | Vista previa | Editor |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/04_opciones.png" width="220" alt="Menú para fijar o eliminar una nota"> | <img src="docs/screenshots/05_editor.png" width="220" alt="Editor de la versión anterior, de texto libre"> | <img src="docs/screenshots/06_sin_resultados.png" width="220" alt="Pantalla sin resultados con el botón Limpiar búsqueda"> |
+| <img src="docs/screenshots/04_opciones.png" width="220" alt="Menú para fijar o eliminar una lista"> | <img src="docs/screenshots/07_vista_previa.png" width="220" alt="Vista previa de una lista con tareas marcadas y tachadas"> | <img src="docs/screenshots/05_editor.png" width="220" alt="Editor con el título, las tareas y la barra de formato"> |
+
+| Validaciones | Búsqueda sin resultados | Ajustes |
+|:---:|:---:|:---:|
+| <img src="docs/screenshots/08_validacion.png" width="220" alt="Editor con el título y la tarea vacíos marcados en rojo"> | <img src="docs/screenshots/06_sin_resultados.png" width="220" alt="Pantalla sin resultados con el botón Limpiar búsqueda"> | <img src="docs/screenshots/09_ajustes.png" width="220" alt="Ajustes de autoguardado y de tocar Editar"> |
 
 ## Requisitos previos
 
 | Herramienta | Versión |
 |---|---|
-| Flutter | `3.47.x` (canal stable; desarrollado con `3.47.5`) |
+| Flutter | `3.47.x` (canal stable; desarrollado con `3.47.7`) |
 | Dart SDK | `^3.13.4` (definido en `pubspec.yaml`) |
 | Xcode + CocoaPods | Solo para correr en iOS |
 | Android Studio / Android SDK | Solo para correr en Android |
@@ -49,8 +53,8 @@ No se necesita ningún API key ni archivo `.env`: las notas se guardan en el dis
 1. Clonar el repositorio:
 
    ```bash
-   git clone https://github.com/marlonc98/pragma_road_1.git
-   cd pragma_road_1
+   git clone https://github.com/marlonc98/pragma_road_1_to_dos.git
+   cd pragma_road_1_to_dos
    ```
 
 2. Instalar dependencias (como `pubspec.lock` no se versiona, este paso resuelve las versiones según los rangos de `pubspec.yaml`):
@@ -108,10 +112,10 @@ flutter test integration_test/search_test.dart -d <id-del-dispositivo> --flavor 
 
 ## Cómo contribuir
 
-Los commits siguen [Conventional Commits](https://www.conventionalcommits.org/) en inglés (`feat(notes): ...`, `fix(note-editor): ...`). Antes de abrir un PR:
+Los commits van en inglés, uno por tema (`feat (...)`, `fix (...)`, `docs (...)`). Antes de abrir un PR:
 
 ```bash
-dart format lib test
+dart format lib test integration_test
 flutter analyze
 flutter test
 ```
@@ -134,16 +138,16 @@ flowchart TB
 
     subgraph Domain["domain — no depende de ninguna otra capa"]
         direction TB
-        UseCase["UseCases<br/>GetNotes, SaveNote, DeleteNote, PinNote, Load"]
-        RepoI["NoteRepository / LocalizationRepository<br/>(interfaces abstractas)"]
-        Entities["Entities<br/>NoteEntity, AsyncState&lt;T&gt;, SearchResult&lt;T&gt;"]
+        UseCase["UseCases<br/>GetNotes, SaveNote, DeleteNote, PinNote,<br/>GetSettings, SaveSettings, Load"]
+        RepoI["NoteRepository / SettingsRepository / LocalizationRepository<br/>(interfaces abstractas)"]
+        Entities["Entities<br/>NoteEntity, TaskEntity, SettingsEntity,<br/>AsyncState&lt;T&gt;, SearchResult&lt;T&gt;"]
         UseCase --> RepoI
         UseCase -.->|usa| Entities
     end
 
     subgraph Data["data"]
         direction TB
-        RepoImpl["NoteRepositoryImpl / NoteRepositoryMock<br/>LocalizationRepositoryImpl"]
+        RepoImpl["NoteRepositoryImpl / NoteRepositoryMock<br/>SettingsRepositoryImpl / SettingsRepositoryMock<br/>LocalizationRepositoryImpl"]
         Sources["shared_preferences<br/>assets/translate_dictionaries/*.json"]
         RepoImpl --> Sources
     end
@@ -160,8 +164,8 @@ lib/
 ├── domain/              # Reglas de negocio puras, sin Flutter ni detalles de almacenamiento
 │   ├── core/             # AsyncState<T>, SearchResult<T>
 │   ├── entities/         # NoteEntity, TaskEntity, SettingsEntity
-│   ├── repositories/     # Contratos abstractos (NoteRepository, LocalizationRepository)
-│   ├── use_cases/        # Una operación de negocio por clase (note/, load_use_case.dart)
+│   ├── repositories/     # Contratos abstractos (NoteRepository, SettingsRepository, LocalizationRepository)
+│   ├── use_cases/        # Una operación de negocio por clase (note/, settings/, load_use_case.dart)
 │   ├── states/           # Contratos de estado global (LocalizationState, NotesState, SettingsState)
 │   └── constants/        # Claves de error compartidas (ErrorsConstants)
 │
@@ -169,6 +173,7 @@ lib/
 │   ├── dto/              # NoteDto y TaskDto: formato guardado y conversión con las entidades
 │   └── repositories/
 │       ├── note/          # NoteRepositoryImpl (shared_preferences) + api/, y NoteRepositoryMock
+│       ├── settings/      # SettingsRepositoryImpl (shared_preferences) y SettingsRepositoryMock
 │       └── localization/  # LocalizationRepositoryImpl + api/
 │
 ├── presentation/        # UI + estado de UI
@@ -190,7 +195,8 @@ lib/
 └── main.dart                  # Punto de entrada: lee el flavor y envuelve la app en ProviderScope
 
 assets/translate_dictionaries/  # Traducciones (es.json)
-test/                           # Tests del repositorio, estado, casos de uso, pantallas y controller del editor
+test/                           # Unit y widget tests: entidades, DTOs, repositorios, estado, casos de uso, validadores y pantallas
+integration_test/               # La app completa en un dispositivo, un archivo por área, con helpers/ compartidos
 ```
 
 ### Capas
@@ -201,7 +207,7 @@ test/                           # Tests del repositorio, estado, casos de uso, p
 
 ### Inyección de dependencias con Riverpod
 
-[dependency_injection.dart](lib/dependency_injection.dart) declara todos los `Provider`/`NotifierProvider`, agrupados en repositorios, estados y casos de uso. `noteRepositoryProvider` elige la implementación según el flavor: `NoteRepositoryMock` en `mock` y `NoteRepositoryImpl` en `dev` y `prod`.
+[dependency_injection.dart](lib/dependency_injection.dart) declara todos los `Provider`/`NotifierProvider`, agrupados en repositorios, estados y casos de uso. `noteRepositoryProvider` elige la implementación según el flavor: `NoteRepositoryMock` en `mock` y `NoteRepositoryImpl` en `dev` y `prod`. `settingsRepositoryProvider` hace lo mismo con los ajustes.
 
 ### Patrón de cada pantalla (Page / Screen / ViewModel)
 
@@ -211,7 +217,7 @@ test/                           # Tests del repositorio, estado, casos de uso, p
 
 ### Manejo de resultados asíncronos: `AsyncState<T>`
 
-Los repositorios devuelven [AsyncState<T>](lib/domain/core/async_state.dart): un wrapper con `status` (`notStarted` / `loading` / `complete` / `failed`), `data` y `error`. Los errores se muestran traducidos a partir de las claves de [ErrorsConstants](lib/domain/constants/errors_constants.dart).
+Los repositorios devuelven [AsyncState<T>](lib/domain/core/async_state.dart): un wrapper con `status` (`notStarted` / `loading` / `complete` / `failed`), `data` y `error`. Los errores se muestran traducidos a partir de las claves de [ErrorsConstants](lib/domain/constants/errors_constants.dart). Un error que no sea un texto ni una `Exception`, como un `TypeError`, usa `defaultError` o `unknownError`.
 
 ### Cómo se guardan las notas
 
@@ -287,12 +293,12 @@ Si una constante no tiene comentario, su texto no recibe variables.
 | Paquete | Para qué se usa | Por qué está |
 |---|---|---|
 | `flutter_riverpod` / `riverpod` | Estado global e inyección de dependencias | Es el mecanismo central de la arquitectura: repositorios, estados y casos de uso se declaran como Providers. |
-| `go_router` | Navegación entre splash, lista y editor | Rutas declarativas (`context.go` / `context.push`). El editor recibe la nota con `extra`. |
-| `shared_preferences` | Persistencia local de clave-valor | Guarda las notas (una clave por nota) y los ids de las fijadas en los flavors `dev` y `prod`. También lo usa la localización para el idioma guardado. |
+| `go_router` | Navegación entre splash, lista, editor y ajustes | Rutas declarativas (`context.go` / `context.push`). El editor recibe la nota con `extra`. |
+| `shared_preferences` | Persistencia local de clave-valor | Guarda las notas (una clave por nota) y los ids de las fijadas en los flavors `dev` y `prod`, y los ajustes. También lo usa la localización para el idioma guardado. |
 | `flutter_staggered_grid_view` | Grilla de dos columnas de alto libre | `SliverMasonryGrid` mantiene las columnas estilo Keep en el mismo scroll que las fijadas y solo construye las tarjetas visibles. |
 | `package_info_plus` | Leer la versión y el número de build | Se muestran en el splash (`Versión {version} ({build})`). |
 | `flutter_flavorizr` (dev) | Generar los flavors `mock`, `dev` y `prod` | Configura Android e iOS (ids, nombres, esquemas de Xcode) desde `pubspec.yaml`. Está configurado para no tocar `main.dart`, `app.dart` ni los íconos. |
-| `flutter_test`, `flutter_lints` (dev) | Tests y reglas de análisis estático | |
+| `flutter_test`, `integration_test`, `flutter_lints` (dev) | Tests y reglas de análisis estático | |
 
 ### Por qué no hay paginación
 
@@ -310,6 +316,6 @@ El [.gitignore](.gitignore) excluye todo lo que es local a la máquina o sensibl
 - La app está solo en español (`es`).
 - Las notas del flavor `mock` viven en memoria y se pierden al cerrar la app.
 - El editor no se cierra con el gesto de deslizar hacia atrás de iOS, para poder guardar lo pendiente antes de salir; se sale con el botón de la barra superior.
-- Las tareas se marcan desde el editor; en la lista solo se ve su estado.
-- La captura del editor es de la versión anterior, de texto libre.
+- Las tareas se marcan al abrir la lista; en el home solo se ve su estado.
+- Una nota guardada con datos dañados hace fallar la carga de todas; el home muestra el error con Reintentar.
 - Las notas guardadas con la cursiva vieja (`*texto*`) ya no se ven en cursiva.
