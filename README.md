@@ -85,40 +85,26 @@ Unit y widget tests (`test/`):
 flutter test
 ```
 
-Integration tests (`integration_test/app_test.dart`), con un simulador o emulador abierto. Usan los repositorios reales con SharedPreferences y **borran lo guardado antes de cada prueba**; por eso se compilan con `--flavor mock`, para no tocar los datos de las apps dev y prod:
+Integration tests (`integration_test/`), con un simulador o emulador abierto. Usan los repositorios reales con SharedPreferences y **borran lo guardado antes de cada prueba**; por eso se compilan con `--flavor mock`, para no tocar los datos de las apps dev y prod. Todos, o un solo archivo:
 
 ```bash
-flutter test integration_test/app_test.dart -d <id-del-dispositivo> --flavor mock
+flutter test integration_test -d <id-del-dispositivo> --flavor mock
 ```
 
-| # | Área | Qué comprueba |
-|---|------|---------------|
-| 1 | Crear | La app arranca sin listas |
-| 2 | Crear | Lista con título y dos tareas: vista previa y tarjeta en el home |
-| 3 | Crear | Varias listas seguidas |
-| 4 | Crear | Salir sin escribir no crea nada |
-| 5 | Crear | Un título de puros espacios no crea nada |
-| 6 | Validación | Guardar vacío marca el título y la tarea |
-| 7 | Validación | Sin título no guarda hasta escribirlo |
-| 8 | Validación | Una tarea vacía no deja guardar, hasta borrarla |
-| 9 | Validación | Máximo 100 caracteres en título y tareas |
-| 10 | Autoguardado | Salir con título guarda, sin la fila vacía |
-| 11 | Autoguardado | Sin título pregunta: Cancelar sigue editando |
-| 12 | Autoguardado | Sin título pregunta: Descartar no crea nada |
-| 13 | Autoguardado | Sin título pregunta: Guardar marca el error y se queda |
-| 14 | Edición | Marcar una tarea la tacha y sobrevive al reinicio |
-| 15 | Edición | Agregar una tarea y borrar otra |
-| 16 | Edición | Borrar el título al editar no deja guardar |
-| 17 | Búsqueda | Encuentra por título y por tarea, no encuentra y limpia |
-| 18 | Búsqueda | Buscar solo espacios sin listas no rompe |
-| 19 | Opciones | Fijar y dejar de fijar |
-| 20 | Opciones | No deja fijar más de 5 listas |
-| 21 | Opciones | Eliminar quita la lista y vuelve al vacío |
-| 22 | Ajustes | Sin autoguardado, salir pregunta y Descartar no guarda |
-| 23 | Ajustes | Sin vista previa, las listas abren para editar |
-| 24 | Ajustes | Los ajustes sobreviven al reinicio |
-| 25 | Persistencia | Las listas sobreviven al reinicio |
-| 26 | Errores | Una lista dañada muestra error y Reintentar funciona |
+```bash
+flutter test integration_test/search_test.dart -d <id-del-dispositivo> --flavor mock
+```
+
+| Archivo | Qué comprueba |
+|---------|---------------|
+| `create_list_test.dart` | La app arranca sin listas · Lista con título y dos tareas · Varias listas seguidas · Salir sin escribir no crea nada · Un título de puros espacios no crea nada |
+| `validation_test.dart` | Guardar vacío marca título y tarea · Sin título no guarda hasta escribirlo · Una tarea vacía no deja guardar, hasta borrarla · Máximo 100 caracteres en título y tareas |
+| `autosave_test.dart` | Salir con título guarda, sin la fila vacía · Sin título pregunta: Cancelar, Descartar y Guardar |
+| `editor_test.dart` | Marcar una tarea la tacha y sobrevive al reinicio · Agregar una tarea y borrar otra · Borrar el título al editar no deja guardar |
+| `search_test.dart` | Encuentra por título y por tarea, no encuentra y limpia · Buscar solo espacios sin listas no rompe |
+| `note_options_test.dart` | Fijar y dejar de fijar · No deja fijar más de 5 listas · Eliminar quita la lista y vuelve al vacío |
+| `settings_test.dart` | Sin autoguardado, salir pregunta y Descartar no guarda · Sin vista previa, las listas abren para editar · Los ajustes sobreviven al reinicio |
+| `persistence_test.dart` | Las listas sobreviven al reinicio · Una lista dañada muestra error y Reintentar funciona |
 
 ## Cómo contribuir
 
