@@ -30,6 +30,61 @@ void main() {
   Future<List<NoteEntity>> allNotes() async =>
       (await repository.getNotes()).data!;
 
+  group('vacíos', () {
+    test('sin notas devuelve éxito con lista vacía y ninguna fijada', () async {
+      final response = await repository.getNotes();
+      expect(response.isSuccess, isTrue);
+      expect(response.data, isEmpty);
+      expect((await repository.countPinnedNotes()).data, 0);
+    });
+
+    test('borrar una nota que no existe no da error', () async {
+      expect((await repository.deleteNote('nada')).isSuccess, isTrue);
+    });
+
+    test('ignora las claves que no son notas', () async {
+      SharedPreferences.setMockInitialValues({
+        'sp_settings_auto_save': true,
+        'sp_pinned_notes': <String>[],
+        'otra_clave': 'texto',
+      });
+      expect(await allNotes(), isEmpty);
+    });
+
+    test('una nota sin título ni tareas se lee sin fallar', () async {
+      await repository.addNote(note('1'));
+      final saved = (await allNotes()).single;
+      expect(saved.title, isNull);
+      expect(saved.content, isEmpty);
+    });
+  });
+
+  group('datos dañados', () {
+    Future<void> expectLoadError(Object? stored) async {
+      SharedPreferences.setMockInitialValues({'sp_note_1': stored!});
+      expect((await repository.getNotes()).isError, isTrue);
+    }
+
+    test('un JSON inválido da error, sin romper', () async {
+      await expectLoadError('{no es json');
+    });
+
+    test('un JSON que no es un objeto da error', () async {
+      await expectLoadError('[]');
+    });
+
+    test('sin fechas o con una fecha inválida da error', () async {
+      await expectLoadError(jsonEncode({'id': '1'}));
+      await expectLoadError(
+        jsonEncode({'id': '1', 'createdAt': 'ayer', 'updatedAt': 'hoy'}),
+      );
+    });
+
+    test('un id de otro tipo da error', () async {
+      await expectLoadError(jsonEncode({'id': 1}));
+    });
+  });
+
   test('guarda cada nota en {prefijo}_{id}', () async {
     await repository.addNote(note('1', title: 'Hola'));
     final prefs = await SharedPreferences.getInstance();
