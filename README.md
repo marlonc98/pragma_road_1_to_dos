@@ -8,7 +8,7 @@ App Flutter de **listas de tareas al estilo Google Keep**: buscas, fijas y elimi
 - **Búsqueda** por título o texto de las tareas mientras escribes, sobre las listas ya cargadas.
 - **Mantener presionada una lista** abre un menú para **fijarla** (máximo 5) o **eliminarla**.
 - **Vista previa**: al abrir una lista se ven el título y las tareas, y solo se pueden marcar. Marcar se guarda de una.
-- **Editor**: al tocar **Editar** aparecen los campos, agregar y eliminar tareas y la barra de formato. **Guardar** vuelve a la vista previa. Las listas nuevas abren editando. Una lista puede tener solo título o solo tareas, pero no puede quedar vacía.
+- **Editor**: al tocar **Editar** aparecen los campos, agregar y eliminar tareas y la barra de formato. **Guardar** vuelve a la vista previa. Las listas nuevas abren editando. El título es obligatorio, no puede haber tareas vacías y cada texto admite hasta 100 caracteres: **Guardar** marca los campos con error, con el hint y el check en rojo.
 - **Ajustes**: desde el engranaje del home se activa o no el **autoguardado** (activo por defecto) y **tocar Editar para modificar** (activo por defecto; si se apaga, las listas abren editando).
 - **Tareas hechas**: al marcar el check, la tarea se tacha. El tachado solo viene del check, no es un formato de texto.
 - **Guardado automático**: con el autoguardado activo, la lista se guarda sola 800 ms después del último cambio, y también al salir. Sin él, solo se guarda con **Guardar**, y si sales con cambios se pregunta si guardarlos o descartarlos.
@@ -149,7 +149,7 @@ lib/
 │   │   ├── note_editor/   # Vista previa y edición, con guardado y barra de formato
 │   │   └── settings/      # Ajustes: autoguardado y tocar Editar
 │   ├── widgets/          # Reutilizables: buttons/ y loaders_status/ (carga, error, sin resultados)
-│   ├── helpers/          # FunctionsHelper: espera a que se termine de escribir
+│   ├── helpers/          # FunctionsHelper (espera a que se termine de escribir) y Validators
 │   ├── states/           # Implementaciones Riverpod de los estados
 │   ├── core/             # ViewModel base + StfViewModelAdapter
 │   ├── constants/        # TextConstants (claves de traducción) y MarkdownConstants
