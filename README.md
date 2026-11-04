@@ -71,11 +71,54 @@ No se necesita ningún API key ni archivo `.env`: las notas se guardan en el dis
 
 | Flavor | Nombre de la app | Notas |
 |---|---|---|
-| `mock` | [MOCK] Gestor de Tareas | En memoria, con 68 notas de ejemplo para probar la lista con muchos elementos. Se pierden al cerrar la app. |
+| `mock` | [MOCK] Gestor de Tareas | En memoria y sin notas al arrancar. Se pierden al cerrar la app. |
 | `dev` | [DEV] Gestor de Tareas | Guardadas en el dispositivo con `shared_preferences`. |
 | `prod` | Gestor de Tareas | Guardadas en el dispositivo con `shared_preferences`. |
 
 Cada flavor tiene su propio `applicationId` / `bundleId` (`.mock`, `.dev`), así que los tres se pueden instalar a la vez. Si se corre sin `--flavor`, la app usa `prod`. El repositorio de cada flavor se elige en [dependency_injection.dart](lib/dependency_injection.dart).
+
+## Pruebas
+
+Unit y widget tests (`test/`):
+
+```bash
+flutter test
+```
+
+Integration tests (`integration_test/app_test.dart`), con un simulador o emulador abierto. Usan los repositorios reales con SharedPreferences y **borran lo guardado antes de cada prueba**; por eso se compilan con `--flavor mock`, para no tocar los datos de las apps dev y prod:
+
+```bash
+flutter test integration_test/app_test.dart -d <id-del-dispositivo> --flavor mock
+```
+
+| # | Área | Qué comprueba |
+|---|------|---------------|
+| 1 | Crear | La app arranca sin listas |
+| 2 | Crear | Lista con título y dos tareas: vista previa y tarjeta en el home |
+| 3 | Crear | Varias listas seguidas |
+| 4 | Crear | Salir sin escribir no crea nada |
+| 5 | Crear | Un título de puros espacios no crea nada |
+| 6 | Validación | Guardar vacío marca el título y la tarea |
+| 7 | Validación | Sin título no guarda hasta escribirlo |
+| 8 | Validación | Una tarea vacía no deja guardar, hasta borrarla |
+| 9 | Validación | Máximo 100 caracteres en título y tareas |
+| 10 | Autoguardado | Salir con título guarda, sin la fila vacía |
+| 11 | Autoguardado | Sin título pregunta: Cancelar sigue editando |
+| 12 | Autoguardado | Sin título pregunta: Descartar no crea nada |
+| 13 | Autoguardado | Sin título pregunta: Guardar marca el error y se queda |
+| 14 | Edición | Marcar una tarea la tacha y sobrevive al reinicio |
+| 15 | Edición | Agregar una tarea y borrar otra |
+| 16 | Edición | Borrar el título al editar no deja guardar |
+| 17 | Búsqueda | Encuentra por título y por tarea, no encuentra y limpia |
+| 18 | Búsqueda | Buscar solo espacios sin listas no rompe |
+| 19 | Opciones | Fijar y dejar de fijar |
+| 20 | Opciones | No deja fijar más de 5 listas |
+| 21 | Opciones | Eliminar quita la lista y vuelve al vacío |
+| 22 | Ajustes | Sin autoguardado, salir pregunta y Descartar no guarda |
+| 23 | Ajustes | Sin vista previa, las listas abren para editar |
+| 24 | Ajustes | Los ajustes sobreviven al reinicio |
+| 25 | Persistencia | Las listas sobreviven al reinicio |
+| 26 | Errores | Una lista dañada muestra error y Reintentar funciona |
 
 ## Cómo contribuir
 
